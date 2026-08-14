@@ -1,33 +1,99 @@
 #include <Arduino.h>
 
-// Hardware smoke test: blink the built-in LED and print to serial.
-// No vending-machine logic yet -- this only proves upload + serial work.
+constexpr uint8_t COIN_PIN = 2;
 
-static const unsigned long BLINK_INTERVAL_MS = 1000;
-static const unsigned long PRINT_INTERVAL_MS = 2000;
+// CH-926 sends a burst of pulses for each accepted coin.
+// We count falling edges in the ISR, then process the burst
+// after no new pulse has arrived for a short period.
+volatile uint8_t pulseCount = 0;
+volatile unsigned long lastPulseMs = 0;
 
-static unsigned long lastBlinkMs = 0;
-static unsigned long lastPrintMs = 0;
-static bool ledOn = false;
+constexpr unsigned long PULSE_DEBOUNCE_MS = 20;
+constexpr unsigned long COIN_BURST_TIMEOUT_MS = 300;
 
-void setup() {
-  Serial.begin(115200);
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, LOW);
-  Serial.println(F("vending-machine boot"));
+uint32_t creditCents = 0;
+
+void onCoinPulse()
+{
+    const unsigned long now = millis();
+
+    if (now - lastPulseMs >= PULSE_DEBOUNCE_MS) {
+        pulseCount++;
+        lastPulseMs = now;
+    }
 }
 
-void loop() {
-  const unsigned long now = millis();
+uint16_t centsFromPulseCount(uint8_t pulses)
+{
+    switch (pulses) {
+        case 1:
+            return 5;   // nickel
 
-  if (now - lastBlinkMs >= BLINK_INTERVAL_MS) {
-    lastBlinkMs = now;
-    ledOn = !ledOn;
-    digitalWrite(LED_BUILTIN, ledOn ? HIGH : LOW);
-  }
+        case 2:
+            return 10;  // dime
 
-  if (now - lastPrintMs >= PRINT_INTERVAL_MS) {
-    lastPrintMs = now;
-    Serial.println(F("vending-machine alive"));
-  }
+        case 5:
+            return 25;  // quarter
+
+        default:
+            return 0;   // unknown / malformed pulse burst
+    }
+}
+
+void setup()
+{
+    Serial.begin(115200);
+
+    pinMode(COIN_PIN, INPUT_PULLUP);
+    attachInterrupt(
+        digitalPinToInterrupt(COIN_PIN),
+        onCoinPulse,
+        FALLING
+    );
+
+    Serial.println("coin controller ready");
+}
+
+void loop()
+{
+    uint8_t completedPulseCount = 0;
+
+    noInterrupts();
+
+    if (
+        pulseCount > 0 &&
+        millis() - lastPulseMs >= COIN_BURST_TIMEOUT_MS
+    ) {
+        completedPulseCount = pulseCount;
+        pulseCount = 0;
+    }
+
+    interrupts();
+
+    if (completedPulseCount > 0) {
+        const uint16_t coinValue = centsFromPulseCount(completedPulseCount);
+
+        if (coinValue > 0) {
+            creditCents += coinValue;
+
+            Serial.print("Coin: $");
+            Serial.print(coinValue / 100);
+            Serial.print(".");
+            if ((coinValue % 100) < 10) {
+                Serial.print("0");
+            }
+            Serial.println(coinValue % 100);
+
+            Serial.print("Credit: $");
+            Serial.print(creditCents / 100);
+            Serial.print(".");
+            if ((creditCents % 100) < 10) {
+                Serial.print("0");
+            }
+            Serial.println(creditCents % 100);
+        } else {
+            Serial.print("Unknown coin pulse count: ");
+            Serial.println(completedPulseCount);
+        }
+    }
 }

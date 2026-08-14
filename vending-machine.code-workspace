@@ -1,0 +1,84 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "extensions": {
+    "recommendations": [
+      "platformio.platformio-ide",
+      "eamodio.gitlens"
+    ]
+  },
+  "settings": {
+    // PlatformIO owns the include paths / compiler flags for IntelliSense.
+    "C_Cpp.default.configurationProvider": "platformio.platformio-ide",
+    // Build output is large and regenerated constantly; keep it out of search/watch.
+    "search.exclude": {
+      "**/.pio": true
+    },
+    "files.watcherExclude": {
+      "**/.pio/**": true
+    },
+    "files.associations": {
+      "*.ino": "cpp"
+    }
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "PlatformIO: Build",
+        "type": "shell",
+        "command": "pio run",
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "problemMatcher": "$gcc",
+        "presentation": {
+          "panel": "shared",
+          "clear": true
+        }
+      },
+      {
+        "label": "PlatformIO: Upload",
+        "type": "shell",
+        "command": "pio run --target upload",
+        "problemMatcher": "$gcc",
+        "presentation": {
+          "panel": "shared",
+          "clear": true
+        }
+      },
+      {
+        "label": "PlatformIO: Serial Monitor",
+        "type": "shell",
+        "command": "pio device monitor",
+        "problemMatcher": [],
+        "presentation": {
+          "panel": "dedicated",
+          "focus": true
+        }
+      },
+      {
+        "label": "PlatformIO: Upload and Monitor",
+        "dependsOrder": "sequence",
+        "dependsOn": [
+          "PlatformIO: Upload",
+          "PlatformIO: Serial Monitor"
+        ],
+        "problemMatcher": []
+      }
+    ]
+  },
+  // The ATmega328P has no usable on-chip debug interface, and this board has no
+  // debug probe attached, so there is no honest launch configuration to offer.
+  // Use the tasks above (Ctrl+Shift+B builds; Run Task -> Upload / Serial Monitor).
+  // If a debugger is added later (e.g. debug_tool = simavr, or an Atmel-ICE),
+  // PlatformIO's "PIO Debug" launch config becomes available and belongs here.
+  "launch": {
+    "version": "0.2.0",
+    "configurations": []
+  }
+}

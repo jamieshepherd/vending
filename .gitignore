@@ -1,0 +1,12 @@
+# PlatformIO build, cache and generated files
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# PlatformIO-generated VS Code config (regenerated on demand)
+.vscode/
+!.vscode/extensions.json
+
+# Editor / OS noise
+*.swp
+.DS_Store

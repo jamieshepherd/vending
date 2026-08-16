@@ -42,9 +42,19 @@
         }
       },
       {
-        "label": "PlatformIO: Upload",
+        "label": "PlatformIO: Upload Front",
         "type": "shell",
-        "command": "pio run --target upload",
+        "command": "pio run --target upload -e front",
+        "problemMatcher": "$gcc",
+        "presentation": {
+          "panel": "shared",
+          "clear": true
+        }
+      },
+      {
+        "label": "PlatformIO: Upload Motor",
+        "type": "shell",
+        "command": "pio run --target upload -e motor",
         "problemMatcher": "$gcc",
         "presentation": {
           "panel": "shared",
